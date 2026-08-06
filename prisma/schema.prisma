@@ -1,0 +1,230 @@
+// This is the database schema for RevenueOS
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id           String        @id @default(uuid())
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  users        User[]
+  leads        Lead[]
+  contacts     Contact[]
+  deals        Deal[]
+  pipelines    Pipeline[]
+  workflows    Workflow[]
+  integrations Integration[]
+  Chat         Chat[]
+  broadcasts   Broadcast[]
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  name          String
+  passwordHash  String
+  role          String // "ADMIN" | "MANAGER" | "MEMBER"
+  orgId         String
+  organization  Organization @relation(fields: [orgId], references: [id])
+  assignedLeads Lead[]
+  assignedDeals Deal[]
+  activities    Activity[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Lead {
+  id             String       @id @default(uuid())
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  companyName    String?
+  industry       String?
+  description    String?
+  source         String // "WEBSITE" | "META_ADS" | "GOOGLE_ADS" | "GOOGLE_FORMS" | "INDIAMART" | "JUSTDIAL" | "WHATSAPP" | "MISSED_CALL" | "CSV" | "API"
+  score          Int          @default(0)
+  status         String // "NEW" | "QUALIFYING" | "CONTACTED" | "CONVERTED" | "COLD"
+  priority       String       @default("MEDIUM") // "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
+  dealValue      Float        @default(0)
+  aiRiskScore    Int          @default(0)
+  aiSummary      String?
+  orgId          String
+  organization   Organization @relation(fields: [orgId], references: [id])
+  assignedUserId String?
+  assignedUser   User?        @relation(fields: [assignedUserId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  activities     Activity[]
+  Chat           Chat[]
+}
+
+model Contact {
+  id           String       @id @default(uuid())
+  name         String
+  email        String?
+  phone        String?
+  companyName  String?
+  healthScore  Int          @default(100) // Customer Success health tracker
+  nps          Int?
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
+  deals        Deal[]
+  activities   Activity[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  Chat         Chat[]
+}
+
+model Pipeline {
+  id           String       @id @default(uuid())
+  name         String
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
+  stages       Stage[]
+  deals        Deal[]
+  createdAt    DateTime     @default(now())
+}
+
+model Stage {
+  id          String   @id @default(uuid())
+  name        String // "Lead" | "Meeting" | "Proposal" | "Negotiation" | "Closed Won" | "Closed Lost"
+  probability Int      @default(10) // 10% to 100%
+  position    Int
+  pipelineId  String
+  pipeline    Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals       Deal[]
+}
+
+model Deal {
+  id                String       @id @default(uuid())
+  name              String
+  value             Float
+  status            String // "OPEN" | "WON" | "LOST"
+  expectedCloseDate String?
+  probability       Int          @default(0)
+  note              String?
+  ageDays           Int          @default(0)
+  aiHealthStatus    String // "HOT" | "STUCK" | "AT_RISK"
+  orgId             String
+  organization      Organization @relation(fields: [orgId], references: [id])
+  contactId         String
+  contact           Contact      @relation(fields: [contactId], references: [id])
+  pipelineId        String
+  pipeline          Pipeline     @relation(fields: [pipelineId], references: [id])
+  stageId           String
+  stage             Stage        @relation(fields: [stageId], references: [id])
+  assignedUserId    String?
+  assignedUser      User?        @relation(fields: [assignedUserId], references: [id])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model Activity {
+  id           String   @id @default(uuid())
+  type         String // "CALL" | "WHATSAPP" | "EMAIL" | "MEETING" | "NOTE" | "SYSTEM"
+  subject      String
+  content      String
+  sentiment    String? // "POSITIVE" | "NEUTRAL" | "NEGATIVE"
+  durationSecs Int? // For calls
+  recordingUrl String? // For calls
+  orgId        String
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  leadId       String?
+  lead         Lead?    @relation(fields: [leadId], references: [id])
+  contactId    String?
+  contact      Contact? @relation(fields: [contactId], references: [id])
+  chatId       String?
+  chat         Chat?    @relation(fields: [chatId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Chat {
+  id           String       @id @default(uuid())
+  phone        String
+  contactName  String
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
+  leadId       String?
+  lead         Lead?        @relation(fields: [leadId], references: [id])
+  contactId    String?
+  contact      Contact?     @relation(fields: [contactId], references: [id])
+  messages     String       @default("[]") // JSON array of messages
+  activities   Activity[]
+  notes        Note[]
+  meetings     Meeting[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  content   String
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
+model Meeting {
+  id            String   @id @default(uuid())
+  title         String?
+  date          String
+  time          String
+  type          String // "GOOGLE_MEET" | "ZOOM" | "OFFICE" | "PHONE_CALL"
+  status        String   @default("SCHEDULED") // "SCHEDULED" | "COMPLETED" | "CANCELLED" | "RESCHEDULED"
+  link          String?
+  notes         String?
+  customerName  String?
+  customerPhone String?
+  chatId        String
+  chat          Chat     @relation(fields: [chatId], references: [id])
+  userId        String?
+  createdAt     DateTime @default(now())
+}
+
+model Workflow {
+  id           String       @id @default(uuid())
+  name         String
+  isActive     Boolean      @default(true)
+  triggerType  String // "LEAD_CREATED" | "DEAL_WON" | "DEAL_LOST" | "MESSAGE_RECEIVED" | "CALL_COMPLETED" | "FORM_SUBMITTED"
+  actionsJson  String // JSON containing action steps e.g. [{"action": "SEND_WHATSAPP", "templateId": "..."}]
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
+  createdAt    DateTime     @default(now())
+}
+
+model Integration {
+  id           String       @id @default(uuid())
+  provider     String // "WHATSAPP" | "STRIPE" | "SLACK" | "GOOGLE" | "SAP" etc.
+  isActive     Boolean      @default(false)
+  credentials  String? // Encrypted credentials JSON
+  orgId        String
+  organization Organization @relation(fields: [orgId], references: [id])
+}
+
+model Broadcast {
+  id             String       @id @default(uuid())
+  name           String
+  audience       String // "ALL_LEADS" | "HOT_LEADS" | "WARM_LEADS" | "COLD_LEADS" | "ALL_CONTACTS" | "CUSTOM"
+  templateId     String?
+  message        String
+  status         String       @default("DRAFT") // "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "CANCELLED"
+  scheduledAt    String?
+  sentCount      Int          @default(0)
+  deliveredCount Int          @default(0)
+  readCount      Int          @default(0)
+  repliedCount   Int          @default(0)
+  orgId          String
+  organization   Organization @relation(fields: [orgId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
