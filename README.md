@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Leads CRM (RevenueOS)
+
+A full-stack **sales & lead-management CRM** built with **Next.js 15 (App Router)** + **Prisma** + a local **SQLite** database. It gives sales teams a unified view of leads, contacts, deals, and meetings with AI-assisted insights.
+
+## Features
+
+- **Dashboard** — KPI stats, AI executive summary, revenue forecast, action queue
+- **Leads (Contacts)** — searchable table, smart segments (Hot / Cold), source filters, add-lead drawer, per-lead detail popup
+- **Companies** — searchable account directory, account detail, associated contacts, AI account intelligence
+- **Deals (Kanban)** — drag-and-drop pipeline with 6 color-coded stages, custom **Pipeline filter** (Direct / Partner), health filter, saved views, analytics panel
+- **Tasks** — grouped by Overdue / Today / Tomorrow / This Week / Completed (color-coded)
+- **Meetings** — month / week / day calendar, drag-drop scheduling, new-meeting modal
+- **WhatsApp CRM** — chat list and composed message UI
+- **Settings** — 22 sections (profile, security, billing, integrations, AI, WhatsApp content, and more)
+- **Quick Actions** — New Lead, New Deal, Send WhatsApp, Broadcast, Schedule Meeting, Add Note
+
+## Tech Stack
+
+- **Framework:** Next.js 15 (App Router, React 19)
+- **UI:** Tailwind CSS + Lucide icons
+- **Database:** SQLite with **Prisma ORM**
+- **State:** Zustand
+- **Charts:** Recharts
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Set up the database
+
+```bash
+npx prisma db push
+npx prisma db seed   # loads demo data (leads, deals, stages, pipelines, etc.)
+```
+
+### 3. Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> **Local only:** the database currently uses SQLite (`prisma/dev.db`). For production deploys, switch the Prisma provider to `postgresql` and set a cloud `DATABASE_URL` (e.g. Neon, Supabase) in your environment variables.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+src/
+  app/
+    api/            # REST endpoints (crm, leads, deals, meetings, ...)
+    console/        # the CRM dashboard shell
+    page.tsx        # public landing page
+  components/
+    console/        # dashboard views + Quick Action modals
+  lib/              # Prisma client, Zustand stores
+prisma/
+  schema.prisma     # data models
+  seed.js           # demo seed data
+```
 
-To learn more about Next.js, take a look at the following resources:
+## API Overview
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Endpoint | Purpose |
+| --- | --- |
+| `GET/POST /api/crm` | Unified CRM data (leads, deals, stages, activities, workflows, integrations) |
+| `GET/POST /api/leads` | Lead CRUD |
+| `GET/POST /api/deals` | Deal CRUD |
+| `POST /api/meetings` | Meeting scheduling |
+| `GET/POST /api/activities` | Activity logging |
+| `POST /api/notes` | Notes |
+| `GET /api/dashboard` | Dashboard stats |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private project.
