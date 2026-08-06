@@ -20,7 +20,7 @@ import {
 
 function useCountUp(end: number, duration = 1200, enabled = true) {
   const [value, setValue] = useState(0);
-  const raf = useRef<number>();
+  const raf = useRef<number | null>(null);
   useEffect(() => {
     if (!enabled) { setValue(end); return; }
     const start = performance.now();
